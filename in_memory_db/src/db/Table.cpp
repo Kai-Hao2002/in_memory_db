@@ -26,11 +26,31 @@ void Table::insert(const std::unordered_map<std::string, Value>& data) {
             }
             row.values.push_back(it->second);
         } else {
-            row.values.push_back(col.type == ColumnType::INT ? Value(0) : Value(""));
+            // 根據欄位型別推定預設值
+            switch (col.type) {
+                case ColumnType::INT:
+                    row.values.push_back(Value(0));
+                    break;
+                case ColumnType::STRING:
+                    row.values.push_back(Value(""));
+                    break;
+                case ColumnType::FLOAT:
+                    row.values.push_back(Value(0.0f));
+                    break;
+                case ColumnType::DOUBLE:
+                    row.values.push_back(Value(0.0));
+                    break;
+                case ColumnType::BOOL:
+                    row.values.push_back(Value(false));
+                    break;
+                default:
+                    throw std::runtime_error("Unsupported column type for default value");
+            }
         }
     }
     rows.push_back(std::move(row));
 }
+
 
 
 

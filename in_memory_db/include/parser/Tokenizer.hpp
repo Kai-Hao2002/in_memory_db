@@ -7,7 +7,8 @@ enum class TokenType {
   Number,
   StringLiteral,
   Symbol,
-  EndOfFile
+  EndOfFile,
+  BooleanLiteral
 };
 
 struct Token {

@@ -23,6 +23,9 @@ public:
     const Table& get_table(const std::string& name) const;
     void insert(const std::string& table_name, const std::unordered_map<std::string, db::Value>& data);
     std::vector<Row> execute(const std::string& sql);
+    void save_to_file(const std::string& filename) const;
+    void load_from_file(const std::string& filename);
+
 
 private:
     std::unordered_map<std::string, Table> tables;

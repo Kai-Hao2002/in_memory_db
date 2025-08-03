@@ -19,10 +19,19 @@ public:
                 return std::holds_alternative<int>(val);
             case ColumnType::STRING:
                 return std::holds_alternative<std::string>(val);
+            case ColumnType::FLOAT:
+                return std::holds_alternative<float>(val) || std::holds_alternative<double>(val);
+            case ColumnType::DOUBLE:
+                return std::holds_alternative<double>(val) || std::holds_alternative<float>(val);
+            case ColumnType::BOOL:
+                return std::holds_alternative<bool>(val);
+            case ColumnType::DATE:
+                return std::holds_alternative<std::string>(val);
             default:
                 return false;
         }
     }
+
 
     void insert(const std::unordered_map<std::string, Value>& data);
     void delete_all();

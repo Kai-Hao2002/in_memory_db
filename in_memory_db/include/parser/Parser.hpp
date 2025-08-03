@@ -34,4 +34,6 @@ private:
   void expect_token(TokenType type, const std::string& text = "");
   Token consume_token();
   Token peek_token();
+
+  
 };

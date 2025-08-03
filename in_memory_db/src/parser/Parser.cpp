@@ -14,6 +14,9 @@
 #include "statement/Delete.hpp"
 #include "statement/SelectJoin.hpp"
 #include "parser/Parser.hpp"
+#include "util/StringUtil.hpp"
+
+
 
 Parser::Parser(const std::string& sql) : tokenizer_(sql) {}
 
@@ -79,12 +82,18 @@ statement::StatementPtr Parser::parse_create_table() {
     if (col_type_token.type != TokenType::Identifier) {
       throw std::runtime_error("Expected column type");
     }
-    std::string col_type = col_type_token.text;
+    
 
     db::ColumnType type;
-    if (col_type == "INT") type = db::ColumnType::INT;
-    else if (col_type == "STRING") type = db::ColumnType::STRING;
+    std::string col_type = db::to_lower(col_type_token.text);
+
+    if (col_type == "int") type = db::ColumnType::INT;
+    else if (col_type == "string") type = db::ColumnType::STRING;
+    else if (col_type == "float") type = db::ColumnType::FLOAT;
+    else if (col_type == "double") type = db::ColumnType::DOUBLE;
+    else if (col_type == "bool") type = db::ColumnType::BOOL;
     else throw std::runtime_error("Unsupported column type: " + col_type);
+
 
     columns.emplace_back(col_name, type);
 
@@ -141,12 +150,37 @@ statement::StatementPtr Parser::parse_insert() {
   std::vector<db::Value> values;
   while (true) {
     Token val_token = consume_token();
+    std::cout << "val_token.type=" << static_cast<int>(val_token.type)
+              << " val_token.text='" << val_token.text << "'" << std::endl;
+
     if (val_token.type == TokenType::Number) {
-      values.emplace_back(std::stoi(val_token.text));
+        if (val_token.text.find('.') != std::string::npos) {
+            values.emplace_back(std::stod(val_token.text));
+        } else {
+            values.emplace_back(std::stoi(val_token.text));
+        }
     } else if (val_token.type == TokenType::StringLiteral) {
-      values.emplace_back(val_token.text);
+        values.emplace_back(val_token.text);
+    } else if (val_token.type == TokenType::Identifier) {
+        std::string val_lower = db::to_lower(val_token.text);
+        if (val_lower == "true") {
+            values.emplace_back(true);
+        } else if (val_lower == "false") {
+            values.emplace_back(false);
+        } else {
+            throw std::runtime_error("Unexpected identifier as value: " + val_token.text);
+        }
+    } else if (val_token.type == TokenType::BooleanLiteral) {
+        std::string val_lower = db::to_lower(val_token.text);
+        if (val_lower == "true") {
+            values.emplace_back(true);
+        } else if (val_lower == "false") {
+            values.emplace_back(false);
+        } else {
+            throw std::runtime_error("Unexpected boolean literal: " + val_token.text);
+        }
     } else {
-      throw std::runtime_error("Expected value in VALUES");
+        throw std::runtime_error("Expected value in VALUES");
     }
 
     Token next = peek_token();
@@ -439,12 +473,16 @@ std::shared_ptr<statement::Condition> Parser::parse_comparison() {
     value = std::stoi(val_token.text);
   } else if (val_token.type == TokenType::StringLiteral) {
     value = val_token.text;
+  } else if (val_token.type == TokenType::BooleanLiteral) {
+    // 假設你有 boolean literal 的 token type，並且 Value 能接受 bool
+    value = (val_token.text == "TRUE" || val_token.text == "true");
   } else {
-    throw std::runtime_error("Expected number or string literal in condition value");
+    throw std::runtime_error("Expected number, string, or boolean literal but got token type: " + std::to_string(static_cast<int>(val_token.type)));
   }
 
   return std::make_shared<statement::CompareCondition>(column, op, value);
 }
+
 
 // parse_compare_op: 取得比較運算子
 statement::CompareOp Parser::parse_compare_op() {

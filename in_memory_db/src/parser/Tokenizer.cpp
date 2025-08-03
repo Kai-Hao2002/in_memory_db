@@ -43,10 +43,11 @@ Token Tokenizer::next_token() {
   }
 
   // ⭐ 單字符符號
-  if (c == ',' || c == '(' || c == ')' || c == '=' || c == '*' || c == '<' || c == '>' || c == '.') {
-    ++pos_;
-    return {TokenType::Symbol, std::string(1, c)};
+  if (c == ',' || c == '(' || c == ')' || c == '=' || c == '*' || c == '<' || c == '>' || c == '.' || c == ';') {
+      ++pos_;
+      return {TokenType::Symbol, std::string(1, c)};
   }
+
 
 
 
@@ -66,24 +67,36 @@ Token Tokenizer::next_token() {
   }
 
 
-  // 整數字面量
+  // 數值字面量（整數 or 浮點數）
   if (std::isdigit(c)) {
-    std::string num;
-    while (pos_ < input_.size() && std::isdigit(input_[pos_])) {
-      num += input_[pos_++];
-    }
-    return {TokenType::Number, num};
+      std::string num;
+      bool has_dot = false;
+      while (pos_ < input_.size() && (std::isdigit(input_[pos_]) || input_[pos_] == '.')) {
+          if (input_[pos_] == '.') {
+              if (has_dot) break;  // 第二個點就停止，避免錯誤格式
+              has_dot = true;
+          }
+          num += input_[pos_++];
+      }
+      return {TokenType::Number, num};  // Parser 根據是否有 . 再做 float/double/int 判斷
   }
+
 
   // 識別字(關鍵字也是用這個標示)
   if (std::isalpha(c) || c == '_') {
     std::string id;
     while (pos_ < input_.size() &&
-           (std::isalnum(input_[pos_]) || input_[pos_] == '_')) {
+          (std::isalnum(input_[pos_]) || input_[pos_] == '_')) {
       id += std::toupper(input_[pos_++]);  // 轉大寫方便後續判斷關鍵字
     }
+
+    if (id == "TRUE" || id == "FALSE") {
+      return {TokenType::BooleanLiteral, id};
+    }
+
     return {TokenType::Identifier, id};
   }
+
 
   throw std::runtime_error(std::string("Unknown character: ") + c);
 }
