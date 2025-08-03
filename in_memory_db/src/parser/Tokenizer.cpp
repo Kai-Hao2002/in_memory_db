@@ -49,19 +49,21 @@ Token Tokenizer::next_token() {
   }
 
 
-  // 字串字面量，簡單版，單引號包裹
-  if (c == '\'') {
-    ++pos_;
-    std::string str;
-    while (pos_ < input_.size() && input_[pos_] != '\'') {
-      str += input_[pos_++];
-    }
-    if (pos_ == input_.size()) {
-      throw std::runtime_error("Unterminated string literal");
-    }
-    ++pos_; // 跳過結尾單引號
-    return {TokenType::StringLiteral, str};
+  // 字串字面量，支援單引號與雙引號
+  if (c == '\'' || c == '"') {
+      char quote = c;
+      ++pos_;
+      std::string str;
+      while (pos_ < input_.size() && input_[pos_] != quote) {
+          str += input_[pos_++];
+      }
+      if (pos_ == input_.size()) {
+          throw std::runtime_error("Unterminated string literal");
+      }
+      ++pos_; // 跳過結尾引號
+      return {TokenType::StringLiteral, str};
   }
+
 
   // 整數字面量
   if (std::isdigit(c)) {

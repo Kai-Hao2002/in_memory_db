@@ -11,7 +11,7 @@ int main() {
     db::Database database;
     bool output_csv = false; // 預設輸出 ASCII 表格
 
-    std::cout << "Welcome to the In-Memory DB.  Enter SQL commands (type 'exit;' to quit):" << std::endl;
+    std::cout << "Welcome to the In-Memory DB.  Enter SQL commands \n(1.type 'exit;' to quit.\n 2.type 'set output csv;' to transfer csv.\n 3.type 'set output ascii;' to transfer ascii):" << std::endl;
 
     std::string line;
     std::string sql;
