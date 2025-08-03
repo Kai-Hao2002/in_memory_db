@@ -4,7 +4,8 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/in_memory_db"
+                "${workspaceFolder}/in_memory_db",
+                "${workspaceFolder}/Catch2/src"
             ],
             "defines": [
                 "_DEBUG",

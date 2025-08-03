@@ -33,11 +33,21 @@ Token Tokenizer::next_token() {
 
   char c = input_[pos_];
 
-  // 單字符符號
-  if (c == ',' || c == '(' || c == ')' || c == '=' || c == '*') {
+  // ⭐ 雙字元運算子先判斷（像 !=、<=、>=）
+  if (pos_ + 1 < input_.size()) {
+    std::string two_chars = input_.substr(pos_, 2);
+    if (two_chars == "!=" || two_chars == "<=" || two_chars == ">=") {
+      pos_ += 2;
+      return {TokenType::Symbol, two_chars};
+    }
+  }
+
+  // ⭐ 單字符符號
+  if (c == ',' || c == '(' || c == ')' || c == '=' || c == '*' || c == '<' || c == '>') {
     ++pos_;
     return {TokenType::Symbol, std::string(1, c)};
   }
+
 
   // 字串字面量，簡單版，單引號包裹
   if (c == '\'') {

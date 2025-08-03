@@ -1,26 +1,55 @@
 // tests/test_delete.cpp
 // tests/test_delete.cpp
-#include <catch2/catch_test_macros.hpp>
-#include "db/Table.hpp"
+#define CATCH_CONFIG_MAIN
+#include <catch2/catch_all.hpp>
+
+#include "db/Database.hpp"
+#include "parser/Parser.hpp"
+#include "statement/Delete.hpp"
 
 using namespace db;
+using namespace statement;
 
-TEST_CASE("Delete rows from table", "[delete]") {
-    Table table("Users", {
-        {"id", ColumnType::INT},
-        {"name", ColumnType::STRING}
+TEST_CASE("DELETE removes matching rows", "[delete]") {
+    Database db;
+    db.create_table("users", {
+        {"id", ColumnType::INT}, {"name", ColumnType::STRING}
     });
 
-    table.insert({{"id", 1}, {"name", "Alice"}});
-    table.insert({{"id", 2}, {"name", "Bob"}});
-    table.insert({{"id", 3}, {"name", "Charlie"}});
+    db.insert("users", { {"id", 1}, {"name", "Alice"} });
+    db.insert("users", { {"id", 2}, {"name", "Bob"} });
 
-    table.delete_where("id", 2);
+    std::string sql = "DELETE FROM users WHERE name = 'Alice'";
+    auto stmt = Parser(sql).parse();
+    auto* delete_stmt = dynamic_cast<Delete*>(stmt.get());
+    REQUIRE(delete_stmt != nullptr);
 
-    auto rows = table.select({"id", "name"});
-    REQUIRE(rows.size() == 2);
-    REQUIRE(std::get<int>(rows[0].values[0]) == 1);
-    REQUIRE(std::get<std::string>(rows[0].values[1]) == "Alice");
-    REQUIRE(std::get<int>(rows[1].values[0]) == 3);
-    REQUIRE(std::get<std::string>(rows[1].values[1]) == "Charlie");
+    delete_stmt->execute(db);
+
+    const auto& table = db.get_table("users");  // 傳回的是 Table&
+    const auto& rows = table.get_rows();        // 用 . 而不是 ->
+    REQUIRE(rows.size() == 1);
+    
+    const auto& remaining_row = rows[0].values;
+    REQUIRE(std::get<std::string>(remaining_row[1]) == "Bob");
+
+}
+
+TEST_CASE("DELETE with no match does nothing", "[delete]") {
+    Database db;
+    db.create_table("users", {
+        {"id", ColumnType::INT}
+    });
+
+    db.insert("users", { {"id", 1} });
+
+    std::string sql = "DELETE FROM users WHERE id = 999";
+    auto stmt = Parser(sql).parse();
+    auto* delete_stmt = dynamic_cast<Delete*>(stmt.get());
+    REQUIRE(delete_stmt != nullptr);
+
+    delete_stmt->execute(db);
+
+    const auto& table = db.get_table("users");
+    REQUIRE(table.get_rows().size() == 1);
 }

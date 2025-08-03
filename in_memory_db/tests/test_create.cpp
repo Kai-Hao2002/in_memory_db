@@ -1,37 +1,51 @@
 // tests/test_create.cpp
-#include "db/Table.hpp"
-#include "db/Row.hpp"
-#include "db/Column.hpp"
-#include <catch2/catch_test_macros.hpp>
+#define CATCH_CONFIG_MAIN
+#include <catch2/catch_all.hpp>
+
+#include "parser/Parser.hpp"
+#include "db/Database.hpp"
+#include "statement/Statement.hpp"
+#include "statement/CreateTable.hpp"
 
 using namespace db;
+using namespace statement;
+using namespace std::string_literals;  // 為了 "..."s 字面值
 
-TEST_CASE("Table creation and insertion") {
-    // Step 1: 建立表格
-    std::vector<Column> columns = {
-        {"id", ColumnType::INT},
-        {"name", ColumnType::STRING}
-    };
-    Table table("users", columns);
+TEST_CASE("CREATE TABLE statement creates a new table", "[create]") {
+    Database db;
 
-    // Step 2: 插入第一筆資料
-    table.insert({
-        {"id", 1},
-        {"name", std::string("Alice")}
+    std::string sql = "CREATE TABLE users (id INT, name STRING)";
+    Parser parser(sql);
+    std::unique_ptr<Statement> stmt = parser.parse();
+
+    auto* create_stmt = dynamic_cast<CreateTableStatement*>(stmt.get());
+    REQUIRE(create_stmt != nullptr);
+
+    create_stmt->execute(db);
+
+    auto& users_table = db.get_table("users");
+    std::vector<std::string> expected_columns = { "id", "name" };
+    REQUIRE(users_table.get_column_names() == expected_columns);
+}
+
+TEST_CASE("CREATE TABLE throws if table already exists", "[create][error]") {
+    Database db;
+    db.create_table("users", {
+        Column("id", ColumnType::INT),
+        Column("name", ColumnType::STRING)
     });
 
-    // Step 3: 插入第二筆資料
-    table.insert({
-        {"id", 2},
-        {"name", std::string("Bob")}
-    });
+    std::string sql = "CREATE TABLE users (id INT, name STRING)";
+    Parser parser(sql);
+    std::unique_ptr<Statement> stmt = parser.parse();
 
-    // Step 4: 全部查詢
-    auto all_rows = table.select({"id", "name"});
+    auto* create_stmt = dynamic_cast<CreateTableStatement*>(stmt.get());
+    REQUIRE(create_stmt != nullptr);
 
-    REQUIRE(all_rows.size() == 2);
-    REQUIRE(std::get<int>(all_rows[0].values[0]) == 1);             // id at index 0
-    REQUIRE(std::get<std::string>(all_rows[0].values[1]) == "Alice"); // name at index 1
-    REQUIRE(std::get<int>(all_rows[1].values[0]) == 2);
-    REQUIRE(std::get<std::string>(all_rows[1].values[1]) == "Bob");
+    try {
+        create_stmt->execute(db);
+        FAIL("Expected exception not thrown");
+    } catch (const std::runtime_error& e) {
+        REQUIRE(std::string(e.what()).find("already exists") != std::string::npos);
+    }
 }

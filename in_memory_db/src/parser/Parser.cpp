@@ -23,14 +23,27 @@ statement::StatementPtr Parser::parse() {
   if (token.type == TokenType::Identifier) { 
     std::string kw = token.text; 
     std::transform(kw.begin(), kw.end(), kw.begin(), ::toupper); 
-    if (kw == "CREATE") return parse_create_table(); 
-    else if (kw == "INSERT") return parse_insert();
-    else if (kw == "SELECT") return parse_select();
-    else if (kw == "UPDATE") return parse_update();
-    else if (kw == "DELETE") return parse_delete();
+    statement::StatementPtr stmt;
+
+    if (kw == "CREATE") stmt = parse_create_table(); 
+    else if (kw == "INSERT") stmt = parse_insert();
+    else if (kw == "SELECT") stmt = parse_select();
+    else if (kw == "UPDATE") stmt = parse_update();
+    else if (kw == "DELETE") stmt = parse_delete();
+    else
+      throw std::runtime_error("Unsupported or invalid SQL command.");
+
+    // 嘗試忽略分號
+    Token next = peek_token();
+    if (next.type == TokenType::Symbol && next.text == ";") {
+      consume_token(); // consume ';' but ignore
+    }
+
+    return stmt;
   } 
   throw std::runtime_error("Unsupported or invalid SQL command."); 
-} 
+}
+
 
 // 解析 create_table table_name (col1, col2, ...) VALUES (val1, val2, ...)
 statement::StatementPtr Parser::parse_create_table() {
@@ -89,20 +102,86 @@ statement::StatementPtr Parser::parse_create_table() {
   return std::make_unique<statement::CreateTableStatement>(table_name, columns);
 }
 
+// 解析 INSER INTO table_name (col1, col2, ...) VALUES (val1, val2, ...)
+statement::StatementPtr Parser::parse_insert() {
+  expect_token(TokenType::Identifier, "INSERT");
+  expect_token(TokenType::Identifier, "INTO");
 
-// 解析 INSERT INTO table_name (col1, col2, ...) VALUES (val1, val2, ...)
+  Token table_token = consume_token();
+  if (table_token.type != TokenType::Identifier) {
+    throw std::runtime_error("Expected table name after INSERT INTO");
+  }
+  std::string table_name = table_token.text;
+
+  expect_token(TokenType::Symbol, "(");
+
+  std::vector<std::string> columns;
+  while (true) {
+    Token col_token = consume_token();
+    if (col_token.type != TokenType::Identifier) {
+      throw std::runtime_error("Expected column name in INSERT");
+    }
+    columns.push_back(col_token.text);
+
+    Token next = peek_token();
+    if (next.type == TokenType::Symbol && next.text == ",") {
+      consume_token();
+    } else if (next.type == TokenType::Symbol && next.text == ")") {
+      consume_token();
+      break;
+    } else {
+      throw std::runtime_error("Expected ',' or ')' in column list");
+    }
+  }
+
+  expect_token(TokenType::Identifier, "VALUES");
+  expect_token(TokenType::Symbol, "(");
+
+  std::vector<db::Value> values;
+  while (true) {
+    Token val_token = consume_token();
+    if (val_token.type == TokenType::Number) {
+      values.emplace_back(std::stoi(val_token.text));
+    } else if (val_token.type == TokenType::StringLiteral) {
+      values.emplace_back(val_token.text);
+    } else {
+      throw std::runtime_error("Expected value in VALUES");
+    }
+
+    Token next = peek_token();
+    if (next.type == TokenType::Symbol && next.text == ",") {
+      consume_token();
+    } else if (next.type == TokenType::Symbol && next.text == ")") {
+      consume_token();
+      break;
+    } else {
+      throw std::runtime_error("Expected ',' or ')' in value list");
+    }
+  }
+
+  std::unordered_map<std::string, db::Value> row;
+  for (size_t i = 0; i < columns.size(); ++i) {
+      row[db::to_lower(columns[i])] = std::move(values[i]);
+  }
+  std::vector<std::unordered_map<std::string, db::Value>> rows = { row };
+
+  return std::make_unique<statement::Insert>(table_name, rows);
+
+}
+
+// 解析 Select 
 statement::StatementPtr Parser::parse_select() {
   expect_token(TokenType::Identifier, "SELECT");
 
   std::vector<std::string> columns;
+  bool select_all = false;
   Token token = peek_token();
 
   if (token.type == TokenType::Symbol && token.text == "*") {
-    // 遇到 * 代表選取所有欄位
     consume_token();
     columns.push_back("*");
+    select_all = true;
   } else {
-    // 否則讀取欄位名稱列表
     while (true) {
       Token col_token = consume_token();
       if (col_token.type != TokenType::Identifier) {
@@ -112,9 +191,9 @@ statement::StatementPtr Parser::parse_select() {
 
       Token next = peek_token();
       if (next.type == TokenType::Symbol && next.text == ",") {
-        consume_token(); // 跳過逗號，繼續讀下一欄
+        consume_token();
       } else {
-        break; // 欄位列表結束
+        break;
       }
     }
   }
@@ -127,37 +206,15 @@ statement::StatementPtr Parser::parse_select() {
   }
   std::string table_name = table_token.text;
 
-  std::optional<std::pair<std::string, db::Value>> where_clause = std::nullopt;
+  std::shared_ptr<statement::Condition> where_condition = nullptr;
 
   Token next = peek_token();
-  if (next.type == TokenType::Identifier &&
-      (next.text == "WHERE" || next.text == "where")) {
+  if (next.type == TokenType::Identifier && (next.text == "WHERE" || next.text == "where")) {
     consume_token();  // consume WHERE
-
-    Token where_col = consume_token();
-    if (where_col.type != TokenType::Identifier) {
-      throw std::runtime_error("Expected column name after WHERE");
-    }
-
-    Token eq = consume_token();
-    if (eq.type != TokenType::Symbol || eq.text != "=") {
-      throw std::runtime_error("Expected '=' after WHERE column");
-    }
-
-    Token val = consume_token();
-    db::Value val_obj;
-    if (val.type == TokenType::Number) {
-      val_obj = std::stoi(val.text);
-    } else if (val.type == TokenType::StringLiteral) {
-      val_obj = val.text;
-    } else {
-      throw std::runtime_error("Expected value after '=' in WHERE clause");
-    }
-
-    where_clause = std::make_pair(where_col.text, val_obj);
+    where_condition = parse_condition();
   }
 
-  return std::make_unique<statement::Select>(table_name, columns, where_clause);
+  return std::make_unique<statement::Select>(table_name, columns, where_condition, select_all);
 }
 
 // 解析 UPDATE table_name SET col = val WHERE col = val
@@ -187,26 +244,14 @@ statement::StatementPtr Parser::parse_update() {
     throw std::runtime_error("Expected value after '=' in SET");
   }
 
-  expect_token(TokenType::Identifier, "WHERE");
-
-  Token where_col = consume_token();
-  if (where_col.type != TokenType::Identifier)
-    throw std::runtime_error("Expected column name after WHERE");
-
-  expect_token(TokenType::Symbol, "=");
-
-  Token where_val_token = consume_token();
-  db::Value where_val;
-  if (where_val_token.type == TokenType::Number) {
-    where_val = std::stoi(where_val_token.text);
-  } else if (where_val_token.type == TokenType::StringLiteral) {
-    where_val = where_val_token.text;
-  } else {
-    throw std::runtime_error("Expected value after '=' in WHERE");
+  std::shared_ptr<statement::Condition> where_condition = nullptr;
+  Token next = peek_token();
+  if (next.type == TokenType::Identifier && (next.text == "WHERE" || next.text == "where")) {
+    consume_token();  // consume WHERE
+    where_condition = parse_condition();
   }
 
-  return std::make_unique<statement::Update>(
-    table_name, set_col.text, set_val, where_col.text, where_val);
+  return std::make_unique<statement::Update>(table_name, set_col.text, set_val, where_condition);
 }
 
 // 解析 DELETE FROM table_name WHERE col = val
@@ -219,27 +264,14 @@ statement::StatementPtr Parser::parse_delete() {
     throw std::runtime_error("Expected table name after DELETE FROM");
   std::string table_name = table_token.text;
 
-  expect_token(TokenType::Identifier, "WHERE");
-
-  Token where_col = consume_token();
-  if (where_col.type != TokenType::Identifier)
-    throw std::runtime_error("Expected column name after WHERE");
-
-  expect_token(TokenType::Symbol, "=");
-
-  Token where_val_token = consume_token();
-  db::Value where_val;
-  if (where_val_token.type == TokenType::Number) {
-    where_val = std::stoi(where_val_token.text);
-  } else if (where_val_token.type == TokenType::StringLiteral) {
-    where_val = where_val_token.text;
-  } else {
-    throw std::runtime_error("Expected value after '=' in WHERE");
+  std::shared_ptr<statement::Condition> where_condition = nullptr;
+  Token next = peek_token();
+  if (next.type == TokenType::Identifier && (next.text == "WHERE" || next.text == "where")) {
+    consume_token();  // consume WHERE
+    where_condition = parse_condition();
   }
 
-  return std::make_unique<statement::Delete>(table_name,
-           std::optional<std::pair<std::string, db::Value>>{
-               std::make_pair(where_col.text, where_val)});
+  return std::make_unique<statement::Delete>(table_name, where_condition);
 }
 
 void Parser::expect_token(TokenType type, const std::string& text) {
@@ -255,4 +287,109 @@ Token Parser::consume_token() {
 
 Token Parser::peek_token() {
   return tokenizer_.peek_token();
+}
+
+// parse OR 項目： left OR right OR ...
+std::shared_ptr<statement::Condition> Parser::parse_logical_or() {
+  auto left = parse_logical_and();
+  while (true) {
+    Token token = peek_token();
+    if (token.type == TokenType::Identifier &&
+        (token.text == "OR" || token.text == "or")) {
+      consume_token(); // consume OR
+      auto right = parse_logical_and();
+      left = std::make_shared<statement::LogicalCondition>(
+          statement::LogicalOp::OR, left, right);
+    } else {
+      break;
+    }
+  }
+  return left;
+}
+
+// parse AND 項目： left AND right AND ...
+std::shared_ptr<statement::Condition> Parser::parse_logical_and() {
+  auto left = parse_primary();
+  while (true) {
+    Token token = peek_token();
+    if (token.type == TokenType::Identifier &&
+        (token.text == "AND" || token.text == "and")) {
+      consume_token(); // consume AND
+      auto right = parse_primary();
+      left = std::make_shared<statement::LogicalCondition>(
+          statement::LogicalOp::AND, left, right);
+    } else {
+      break;
+    }
+  }
+  return left;
+}
+
+// parse_primary: 括號或比較條件
+std::shared_ptr<statement::Condition> Parser::parse_primary() {
+  Token token = peek_token();
+
+  if (token.type == TokenType::Symbol && token.text == "(") {
+    consume_token();  // consume '('
+    auto cond = parse_condition();
+    expect_token(TokenType::Symbol, ")");
+    return std::make_shared<statement::ParenCondition>(cond);
+  } else {
+    return parse_comparison();
+  }
+}
+
+// parse_comparison: 比較條件 col op val
+std::shared_ptr<statement::Condition> Parser::parse_comparison() {
+  Token col_token = consume_token();
+  if (col_token.type != TokenType::Identifier) {
+    throw std::runtime_error("Expected column name in condition");
+  }
+  std::string column = col_token.text;
+
+  auto op = parse_compare_op();
+
+  Token val_token = consume_token();
+  db::Value value;
+  if (val_token.type == TokenType::Number) {
+    value = std::stoi(val_token.text);
+  } else if (val_token.type == TokenType::StringLiteral) {
+    value = val_token.text;
+  } else {
+    throw std::runtime_error("Expected number or string literal in condition value");
+  }
+
+  return std::make_shared<statement::CompareCondition>(column, op, value);
+}
+
+// parse_compare_op: 取得比較運算子
+statement::CompareOp Parser::parse_compare_op() {
+  Token token = consume_token();
+  if (token.type != TokenType::Symbol)
+    throw std::runtime_error("Expected comparison operator");
+
+  if (token.text == "=") return statement::CompareOp::EQ;
+  else if (token.text == "!=") return statement::CompareOp::NEQ;
+  else if (token.text == "<") return statement::CompareOp::LT;
+  else if (token.text == "<=") return statement::CompareOp::LTE;
+  else if (token.text == ">") return statement::CompareOp::GT;
+  else if (token.text == ">=") return statement::CompareOp::GTE;
+
+  throw std::runtime_error("Unknown comparison operator: " + token.text);
+}
+
+// parse_logical_op: 取得邏輯運算子 AND / OR
+statement::LogicalOp Parser::parse_logical_op() {
+  Token token = consume_token();
+  if (token.type != TokenType::Identifier)
+    throw std::runtime_error("Expected logical operator AND or OR");
+
+  if (token.text == "AND" || token.text == "and") return statement::LogicalOp::AND;
+  if (token.text == "OR" || token.text == "or") return statement::LogicalOp::OR;
+
+  throw std::runtime_error("Unknown logical operator: " + token.text);
+}
+
+std::shared_ptr<statement::Condition> Parser::parse_condition() {
+  return parse_logical_or();
 }

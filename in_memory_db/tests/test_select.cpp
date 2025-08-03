@@ -1,28 +1,80 @@
 // tests/test_select.cpp
-#include <catch2/catch_test_macros.hpp>
+#define CATCH_CONFIG_MAIN
+#include <catch2/catch_all.hpp>
+
 #include "db/Database.hpp"
+#include "parser/Parser.hpp"
+#include "statement/Select.hpp"
+#include "statement/CreateTable.hpp"
+#include "statement/Insert.hpp"
 
 using namespace db;
+using namespace statement;
 
-TEST_CASE("Select rows with and without WHERE clause", "[select]") {
-    Table table("Employees", {
-        {"id", ColumnType::INT},
-        {"dept", ColumnType::STRING}
+TEST_CASE("Basic SELECT with WHERE condition", "[select]") {
+    Database db;
+
+    // 先建表並插入資料，這樣後面所有測試區塊都會用到
+    db.create_table("users", {
+        {"id", ColumnType::INT}, {"name", ColumnType::STRING}
+    });
+    db.insert("users", { {"id", 1}, {"name", "Alice"} });
+    db.insert("users", { {"id", 2}, {"name", "Bob"} });
+
+    SECTION("Parse and execute SELECT statement") {
+        std::string sql = "SELECT id, name FROM users WHERE id = 1";
+        Parser parser(sql);
+        auto stmt = parser.parse();
+
+        auto select_stmt = dynamic_cast<Select*>(stmt.get());
+        REQUIRE(select_stmt != nullptr);
+
+        select_stmt->execute(db);
+
+        const auto& results = select_stmt->get_results();
+        REQUIRE(results.size() == 1);
+
+        REQUIRE(std::get<int>(results[0][0]) == 1);
+        REQUIRE(std::get<std::string>(results[0][1]) == "Alice");
+
+    }
+}
+
+
+TEST_CASE("SELECT with no match returns empty", "[select]") {
+    Database db;
+    db.create_table("users", {
+        {"id", ColumnType::INT}, {"name", ColumnType::STRING}
     });
 
-    table.insert({{"id", 1}, {"dept", "HR"}});
-    table.insert({{"id", 2}, {"dept", "Engineering"}});
-    table.insert({{"id", 3}, {"dept", "HR"}});
+    db.insert("users", { {"id", 1}, {"name", "Alice"} });
 
-    SECTION("Select all rows") {
-        auto rows = table.select({"id", "dept"});
-        REQUIRE(rows.size() == 3);
-    }
+    std::string sql = "SELECT id, name FROM users WHERE id = 999";
+    auto stmt = Parser(sql).parse();
+    auto select_stmt = dynamic_cast<Select*>(stmt.get());
+    REQUIRE(select_stmt != nullptr);
 
-    SECTION("Select with WHERE clause") {
-        auto rows = table.select({"id"}, std::make_pair("dept", Value("HR")));
-        REQUIRE(rows.size() == 2);
-        REQUIRE(std::get<int>(rows[0].values[0]) == 1);
-        REQUIRE(std::get<int>(rows[1].values[0]) == 3);
-    }
+    select_stmt->execute(db);
+    REQUIRE(select_stmt->get_results().empty());
+}
+
+TEST_CASE("SELECT * works correctly", "[select][select_all]") {
+    Database db;
+    db.create_table("users", {
+        {"id", ColumnType::INT},
+        {"name", ColumnType::STRING}
+    });
+
+    db.insert("users", { {"id", 3}, {"name", "Charlie"} });
+
+    std::string sql = "SELECT * FROM users WHERE name = 'Charlie'";
+    auto stmt = Parser(sql).parse();
+    auto select_stmt = dynamic_cast<Select*>(stmt.get());
+    REQUIRE(select_stmt != nullptr);
+
+    select_stmt->execute(db);
+    const auto& results = select_stmt->get_results();
+    REQUIRE(results.size() == 1);
+    REQUIRE(std::get<int>(results[0][0]) == 3);
+    REQUIRE(std::get<std::string>(results[0][1]) == "Charlie");
 }

@@ -2,15 +2,21 @@
 #include "statement/CreateTable.hpp"
 #include "db/Database.hpp"
 #include "db/Column.hpp"
+#include "util/StringUtil.hpp"
 #include <stdexcept>
 
 namespace statement {
 
 CreateTableStatement::CreateTableStatement(std::string table_name, std::vector<db::Column> columns)
-    : table_name_(std::move(table_name)), columns_(std::move(columns)) {}
+    : table_name_(db::to_lower(std::move(table_name))) {
+    
+    for (auto& col : columns) {
+        col.name = db::to_lower(col.name);
+    }
+    columns_ = std::move(columns);
+}
 
 void CreateTableStatement::execute(db::Database& db) {
-    // 下面是針對 Database 的方法檢查與執行
     if (!db.has_table(table_name_)) {
         db.create_table(table_name_, columns_);
     } else {

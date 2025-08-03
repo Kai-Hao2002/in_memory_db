@@ -1,15 +1,17 @@
-// src/main.cpp
+//main.cpp
 #include <iostream>
 #include <string>
 #include <memory>
 #include "db/Database.hpp"
 #include "parser/Parser.hpp"
 #include "statement/Statement.hpp"
+#include "util/Formatter.hpp"
 
 int main() {
     db::Database database;
+    bool output_csv = false; // 預設輸出 ASCII 表格
 
-    std::cout << "Welcome to the In-Memory DB. Enter SQL commands (type 'exit;' to quit):" << std::endl;
+    std::cout << "Welcome to the In-Memory DB.  Enter SQL commands (type 'exit;' to quit):" << std::endl;
 
     std::string line;
     std::string sql;
@@ -17,31 +19,55 @@ int main() {
     while (true) {
         std::cout << "SQL> ";
         if (!std::getline(std::cin, line)) {
-            break; // EOF or input error
+            break;
+        }
+
+        if (line == "SET OUTPUT CSV;" || line == "set output csv;") {
+            output_csv = true;
+            std::cout << "Output format set to CSV." << std::endl;
+            continue;
+        }
+
+        if (line == "SET OUTPUT ASCII;" || line == "set output ascii;") {
+            output_csv = false;
+            std::cout << "Output format set to ASCII table." << std::endl;
+            continue;
+        }
+
+        if (line == "exit;" || line == "exit") {
+            break;
         }
 
         sql += line;
-        // 判斷是否輸入結束（以分號 ; 結尾表示一條完整 SQL）
         if (!sql.empty() && sql.back() == ';') {
-            // 移除分號
             sql.pop_back();
 
             try {
                 Parser parser(sql);
                 statement::StatementPtr stmt = parser.parse();
 
-                // 執行語句
                 stmt->execute(database);
 
-                std::cout << "SQL executed successfully." << std::endl;
+                if (stmt->has_results()) {
+                    // 只有 SELECT 等查詢有結果
+                    auto headers = stmt->get_columns();
+                    auto rows = stmt->get_results();
+
+                    if (output_csv) {
+                        db::Formatter::print_csv(headers, rows, std::cout);
+                    } else {
+                        db::Formatter::print_ascii_table(headers, rows, std::cout);
+                    }
+                } else {
+                    // 其他指令只印成功訊息
+                    std::cout << stmt->name() << " executed successfully." << std::endl;
+                }
             } catch (const std::exception& ex) {
                 std::cerr << "Error: " << ex.what() << std::endl;
             }
 
-            // 清空緩存等待下一條命令
             sql.clear();
         } else {
-            // 如果沒遇到分號，繼續讀取下一行，支援多行 SQL
             sql += " ";
         }
     }

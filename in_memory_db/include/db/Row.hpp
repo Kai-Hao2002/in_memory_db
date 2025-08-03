@@ -3,10 +3,10 @@
 #include <vector>
 #include <variant>
 #include <string>
+#include "util/Value.hpp"
 
 namespace db {
 
-using Value = std::variant<int, std::string>;
 
 struct Row {
     std::vector<Value> values;
