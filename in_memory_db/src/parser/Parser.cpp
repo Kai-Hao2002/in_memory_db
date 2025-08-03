@@ -12,6 +12,7 @@
 #include "statement/Select.hpp"
 #include "statement/Update.hpp"
 #include "statement/Delete.hpp"
+#include "statement/SelectJoin.hpp"
 #include "parser/Parser.hpp"
 
 Parser::Parser(const std::string& sql) : tokenizer_(sql) {}
@@ -173,31 +174,46 @@ statement::StatementPtr Parser::parse_insert() {
 statement::StatementPtr Parser::parse_select() {
   expect_token(TokenType::Identifier, "SELECT");
 
+  // 解析欄位列表
   std::vector<std::string> columns;
   bool select_all = false;
   Token token = peek_token();
 
   if (token.type == TokenType::Symbol && token.text == "*") {
-    consume_token();
-    columns.push_back("*");
-    select_all = true;
+      consume_token();
+      columns.push_back("*");
+      select_all = true;
   } else {
-    while (true) {
-      Token col_token = consume_token();
-      if (col_token.type != TokenType::Identifier) {
-        throw std::runtime_error("Expected column name in SELECT");
-      }
-      columns.push_back(col_token.text);
+      while (true) {
+          Token col_token = consume_token();
+          if (col_token.type != TokenType::Identifier) {
+              throw std::runtime_error("Expected column name in SELECT");
+          }
+          std::string col_name = col_token.text;
 
-      Token next = peek_token();
-      if (next.type == TokenType::Symbol && next.text == ",") {
-        consume_token();
-      } else {
-        break;
+          // 檢查是否有 table.column 格式
+          if (peek_token().type == TokenType::Symbol && peek_token().text == ".") {
+              consume_token(); // consume '.'
+              Token next_col_token = consume_token();
+              if (next_col_token.type != TokenType::Identifier) {
+                  throw std::runtime_error("Expected column name after '.' in SELECT");
+              }
+              col_name += "." + next_col_token.text;
+          }
+
+          columns.push_back(col_name);
+
+          Token next = peek_token();
+          if (next.type == TokenType::Symbol && next.text == ",") {
+              consume_token();
+          } else {
+              break;
+          }
       }
-    }
   }
 
+
+  // 讀取 FROM
   expect_token(TokenType::Identifier, "FROM");
 
   Token table_token = consume_token();
@@ -206,16 +222,84 @@ statement::StatementPtr Parser::parse_select() {
   }
   std::string table_name = table_token.text;
 
-  std::shared_ptr<statement::Condition> where_condition = nullptr;
-
   Token next = peek_token();
-  if (next.type == TokenType::Identifier && (next.text == "WHERE" || next.text == "where")) {
-    consume_token();  // consume WHERE
+
+  // INNER JOIN 解析
+  if (next.type == TokenType::Identifier && 
+      (next.text == "INNER" || next.text == "inner")) {
+
+    consume_token(); // consume INNER
+
+    expect_token(TokenType::Identifier, "JOIN");
+
+    // 讀取第二個表名
+    Token table2_token = consume_token();
+    if (table2_token.type != TokenType::Identifier) {
+      throw std::runtime_error("Expected table name after INNER JOIN");
+    }
+    std::string table2_name = table2_token.text;
+
+    expect_token(TokenType::Identifier, "ON");
+
+    // 解析 JOIN 條件，格式：table1.col1 = table2.col2
+    // 左邊欄位，允許 table.column 格式
+    Token left_table_token = consume_token();
+    if (left_table_token.type != TokenType::Identifier) {
+      throw std::runtime_error("Expected table name or column name in JOIN condition");
+    }
+    std::string left_col = left_table_token.text;
+    if (peek_token().type == TokenType::Symbol && peek_token().text == ".") {
+      consume_token(); // consume '.'
+      Token col_name_token = consume_token();
+      if (col_name_token.type != TokenType::Identifier) {
+        throw std::runtime_error("Expected column name after '.' in JOIN condition");
+      }
+      left_col += "." + col_name_token.text;
+    }
+
+    expect_token(TokenType::Symbol, "=");
+
+    // 右邊欄位，允許 table.column 格式
+    Token right_table_token = consume_token();
+    if (right_table_token.type != TokenType::Identifier) {
+      throw std::runtime_error("Expected table name or column name in JOIN condition");
+    }
+    std::string right_col = right_table_token.text;
+    if (peek_token().type == TokenType::Symbol && peek_token().text == ".") {
+      consume_token(); // consume '.'
+      Token col_name_token = consume_token();
+      if (col_name_token.type != TokenType::Identifier) {
+        throw std::runtime_error("Expected column name after '.' in JOIN condition");
+      }
+      right_col += "." + col_name_token.text;
+    }
+
+    // 讀取可選的 WHERE 條件
+    std::shared_ptr<statement::Condition> where_condition = nullptr;
+    Token after_join = peek_token();
+    if (after_join.type == TokenType::Identifier && 
+        (after_join.text == "WHERE" || after_join.text == "where")) {
+      consume_token();
+      where_condition = parse_condition();
+    }
+
+    // 回傳 SelectJoin 物件
+    return std::make_unique<statement::SelectJoin>(
+      table_name, table2_name, columns, left_col, right_col, where_condition, select_all);
+  }
+
+  // 沒有 JOIN，解析可選的 WHERE
+  std::shared_ptr<statement::Condition> where_condition = nullptr;
+  if (next.type == TokenType::Identifier && 
+      (next.text == "WHERE" || next.text == "where")) {
+    consume_token();
     where_condition = parse_condition();
   }
 
   return std::make_unique<statement::Select>(table_name, columns, where_condition, select_all);
 }
+
+
 
 // 解析 UPDATE table_name SET col = val WHERE col = val
 statement::StatementPtr Parser::parse_update() {

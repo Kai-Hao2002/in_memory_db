@@ -43,10 +43,11 @@ Token Tokenizer::next_token() {
   }
 
   // ⭐ 單字符符號
-  if (c == ',' || c == '(' || c == ')' || c == '=' || c == '*' || c == '<' || c == '>') {
+  if (c == ',' || c == '(' || c == ')' || c == '=' || c == '*' || c == '<' || c == '>' || c == '.') {
     ++pos_;
     return {TokenType::Symbol, std::string(1, c)};
   }
+
 
 
   // 字串字面量，支援單引號與雙引號

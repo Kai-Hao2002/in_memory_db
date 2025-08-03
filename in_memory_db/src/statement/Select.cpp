@@ -37,11 +37,18 @@ void Select::execute(db::Database& db) {
         }
     } else {
         for (const auto& col_name : columns_) {
+            // 處理 table.column 語法：若有 "."，只取 "." 後的欄位名稱
+            std::string actual_col_name = col_name;
+            size_t dot_pos = col_name.find('.');
+            if (dot_pos != std::string::npos) {
+                actual_col_name = col_name.substr(dot_pos + 1);
+            }
+
             bool found = false;
             for (size_t i = 0; i < table.columns.size(); ++i) {
-                if (table.columns[i].name == col_name) {
+                if (table.columns[i].name == actual_col_name) {
                     col_indexes.push_back(i);
-                    selected_col_names.push_back(col_name);
+                    selected_col_names.push_back(col_name);  // 顯示仍用原始名稱
                     found = true;
                     break;
                 }
@@ -64,8 +71,8 @@ void Select::execute(db::Database& db) {
             results_.push_back(std::move(selected_values));
         }
     }
-
 }
+
 
 
 } // namespace statement
