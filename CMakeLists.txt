@@ -11,3 +11,5 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 # 加入子目錄
 add_subdirectory(in_memory_db)
 enable_testing()
+
+file(COPY ${CMAKE_SOURCE_DIR}/fonts DESTINATION ${CMAKE_BINARY_DIR})

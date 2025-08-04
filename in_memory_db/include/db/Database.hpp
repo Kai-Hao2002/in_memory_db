@@ -26,7 +26,6 @@ public:
     void save_to_file(const std::string& filename) const;
     void load_from_file(const std::string& filename);
 
-
 private:
     std::unordered_map<std::string, Table> tables;
 };
