@@ -20,14 +20,14 @@ private:
   statement::StatementPtr parse_update();
   statement::StatementPtr parse_delete();
 
-    // ✅ condition parse
+    // condition parse
   std::shared_ptr<statement::Condition> parse_condition();
   std::shared_ptr<statement::Condition> parse_logical_or();
   std::shared_ptr<statement::Condition> parse_logical_and();
   std::shared_ptr<statement::Condition> parse_comparison();
   std::shared_ptr<statement::Condition> parse_primary();
 
-  // ✅ operator parse
+  // operator parse
   statement::CompareOp parse_compare_op();
   statement::LogicalOp parse_logical_op();
 

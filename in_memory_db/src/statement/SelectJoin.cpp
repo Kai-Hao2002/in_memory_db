@@ -33,7 +33,7 @@ void SelectJoin::execute(db::Database& db) {
     const auto& left_tbl = db.get_table(left_table_);
     const auto& right_tbl = db.get_table(right_table_);
 
-    // 將 "table.column" 格式轉為 "column"
+    // Convert "table.column" format to "column"
     auto extract_col_name = [](const std::string& full) -> std::string {
         size_t dot = full.find('.');
         return (dot != std::string::npos) ? full.substr(dot + 1) : full;
@@ -42,7 +42,7 @@ void SelectJoin::execute(db::Database& db) {
     std::string left_join_col_name = extract_col_name(left_join_column_);
     std::string right_join_col_name = extract_col_name(right_join_column_);
 
-    // 找出 join 欄位 index
+    // Find the join field index
     size_t left_join_idx = left_tbl.columns.size();
     for (size_t i = 0; i < left_tbl.columns.size(); ++i) {
         if (left_tbl.columns[i].name == left_join_col_name) {
@@ -63,7 +63,7 @@ void SelectJoin::execute(db::Database& db) {
     if (right_join_idx == right_tbl.columns.size())
         throw std::runtime_error("Join column '" + right_join_column_ + "' not found in table '" + right_table_ + "'");
 
-    // 收集輸出欄位資訊
+    // Collect output field information
     struct ColInfo {
         const db::Table* table;
         size_t col_idx;
@@ -74,7 +74,7 @@ void SelectJoin::execute(db::Database& db) {
     output_column_names_.clear();
 
     if (select_all_) {
-        select_columns_.clear();  // 自動生成欄位名稱（table.col）
+        select_columns_.clear();  // Automatically generate column names (table.col)
 
         for (size_t i = 0; i < left_tbl.columns.size(); ++i) {
             std::string col_name = left_table_ + "." + left_tbl.columns[i].name;
@@ -117,7 +117,7 @@ void SelectJoin::execute(db::Database& db) {
         }
     }
 
-    // 做 INNER JOIN (簡單 nested loop)
+    // Do an INNER JOIN (simple nested loop)
     for (const auto& left_row : left_tbl.get_rows()) {
         for (const auto& right_row : right_tbl.get_rows()) {
             if (left_row.values[left_join_idx] == right_row.values[right_join_idx]) {

@@ -7,7 +7,7 @@ namespace gui {
 
 class CLIInterface {
 public:
-    void run();  // 啟動 CLI 主流程
+    void run();  
 private:
     db::Database database_;
     bool output_csv_ = false;

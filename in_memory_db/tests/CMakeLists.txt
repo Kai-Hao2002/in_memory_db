@@ -8,18 +8,18 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(Catch2)
 
-# 取得當前目錄所有 cpp 檔案做為測試檔案
+# Get all cpp files in the current directory as test files
 file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS "*.cpp")
 
 add_executable(in_memory_db_tests ${TEST_SOURCES})
 
-# 連結資料庫函式庫和 Catch2 測試主函式
+# Link the database library and Catch2 test main function
 target_link_libraries(in_memory_db_tests PRIVATE in_memory_db_lib Catch2::Catch2WithMain)
 
-# 設定 include path（改成專案中絕對路徑）
+# Set include path (change to the absolute path in the project)
 target_include_directories(in_memory_db_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
-# 啟用 CTest 和 Catch2 的自動測試發現
+# Enable automatic test discovery for CTest and Catch2
 include(CTest)
 include(Catch)
 

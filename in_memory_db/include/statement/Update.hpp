@@ -12,7 +12,7 @@ namespace statement {
 
 class Update : public Statement {
 public:
-    // 使用 Condition 來支援複雜條件
+    // Use Condition to support complex conditions
     Update(const std::string& table_name,
            const std::string& set_column,
            const db::Value& set_value,

@@ -41,10 +41,10 @@ public:
     std::vector<Row> select(const std::vector<std::string>& cols,
                         std::shared_ptr<statement::Condition> where,
                         bool select_all = false) const;  
-    // 取得所有 Row 的參考 (非 const)
+    // Get references to all Rows (non-const)
     std::vector<Row>& get_rows();
 
-    // 取得所有 Row 的 const 版本
+    // Get references to all Rows (const)
     const std::vector<Row>& get_rows() const;
 
     std::vector<std::string> get_column_names() const {

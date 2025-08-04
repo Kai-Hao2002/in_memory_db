@@ -15,7 +15,6 @@ TEST_CASE("SELECT with WHERE conditions", "[select][where]") {
         {"id", ColumnType::INT}, {"name", ColumnType::STRING}
     });
 
-    // 插入多筆資料
     Parser("INSERT INTO users (id, name) VALUES (1, 'Alice')").parse()->execute(db);
     Parser("INSERT INTO users (id, name) VALUES (2, 'Bob')").parse()->execute(db);
     Parser("INSERT INTO users (id, name) VALUES (3, 'Charlie')").parse()->execute(db);

@@ -14,10 +14,9 @@ using Catch::Approx;
 TEST_CASE("Supports all basic data types", "[types]") {
     Database db;
 
-    // 建立含所有型別的表格
+    // Create a table containing all types
     Parser("CREATE TABLE test_types(id INT, name STRING, score FLOAT, accuracy DOUBLE, passed BOOL)").parse()->execute(db);
 
-    // 插入資料
     Parser("INSERT INTO test_types(id, name, score, accuracy, passed) VALUES (1, 'Alice', 95.5, 99.999, true)").parse()->execute(db);
     Parser("INSERT INTO test_types(id, name, score, accuracy, passed) VALUES (2, 'Bob', 87.25, 88.12345, false)").parse()->execute(db);
 
@@ -96,6 +95,6 @@ TEST_CASE("Supports all basic data types", "[types]") {
         REQUIRE(std::get<int>(results[1][0]) == 2);
         REQUIRE(std::get<std::string>(results[1][1]) == "Bob");
 
-        std::remove(filename.c_str());  // 清除測試檔案
+        std::remove(filename.c_str());  
     }
 }

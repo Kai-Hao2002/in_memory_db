@@ -16,11 +16,7 @@
 #include "parser/Parser.hpp"
 #include "util/StringUtil.hpp"
 
-
-
 Parser::Parser(const std::string& sql) : tokenizer_(sql) {}
-
-
 
 statement::StatementPtr Parser::parse() { 
   Token token = peek_token(); 
@@ -37,7 +33,7 @@ statement::StatementPtr Parser::parse() {
     else
       throw std::runtime_error("Unsupported or invalid SQL command.");
 
-    // 嘗試忽略分號
+    // Try ignoring the semicolon
     Token next = peek_token();
     if (next.type == TokenType::Symbol && next.text == ";") {
       consume_token(); // consume ';' but ignore
@@ -49,7 +45,7 @@ statement::StatementPtr Parser::parse() {
 }
 
 
-// 解析 create_table table_name (col1, col2, ...) VALUES (val1, val2, ...)
+// Analysis create_table table_name (col1, col2, ...) VALUES (val1, val2, ...)
 statement::StatementPtr Parser::parse_create_table() {
   // consume CREATE
   expect_token(TokenType::Identifier, "CREATE");
@@ -112,7 +108,7 @@ statement::StatementPtr Parser::parse_create_table() {
   return std::make_unique<statement::CreateTableStatement>(table_name, columns);
 }
 
-// 解析 INSER INTO table_name (col1, col2, ...) VALUES (val1, val2, ...)
+// Analysis INSER INTO table_name (col1, col2, ...) VALUES (val1, val2, ...)
 statement::StatementPtr Parser::parse_insert() {
   expect_token(TokenType::Identifier, "INSERT");
   expect_token(TokenType::Identifier, "INTO");
@@ -204,11 +200,11 @@ statement::StatementPtr Parser::parse_insert() {
 
 }
 
-// 解析 Select 
+// Analysis Select SELECT * FROM table_name WHERE condition
 statement::StatementPtr Parser::parse_select() {
   expect_token(TokenType::Identifier, "SELECT");
 
-  // 解析欄位列表
+  // Parse the field list
   std::vector<std::string> columns;
   bool select_all = false;
   Token token = peek_token();
@@ -225,7 +221,7 @@ statement::StatementPtr Parser::parse_select() {
           }
           std::string col_name = col_token.text;
 
-          // 檢查是否有 table.column 格式
+          // Check if there is table.column format
           if (peek_token().type == TokenType::Symbol && peek_token().text == ".") {
               consume_token(); // consume '.'
               Token next_col_token = consume_token();
@@ -247,7 +243,7 @@ statement::StatementPtr Parser::parse_select() {
   }
 
 
-  // 讀取 FROM
+  // Read FROM
   expect_token(TokenType::Identifier, "FROM");
 
   Token table_token = consume_token();
@@ -258,7 +254,7 @@ statement::StatementPtr Parser::parse_select() {
 
   Token next = peek_token();
 
-  // INNER JOIN 解析
+  // INNER JOIN parse
   if (next.type == TokenType::Identifier && 
       (next.text == "INNER" || next.text == "inner")) {
 
@@ -266,7 +262,7 @@ statement::StatementPtr Parser::parse_select() {
 
     expect_token(TokenType::Identifier, "JOIN");
 
-    // 讀取第二個表名
+    // Read the second table name
     Token table2_token = consume_token();
     if (table2_token.type != TokenType::Identifier) {
       throw std::runtime_error("Expected table name after INNER JOIN");
@@ -275,8 +271,8 @@ statement::StatementPtr Parser::parse_select() {
 
     expect_token(TokenType::Identifier, "ON");
 
-    // 解析 JOIN 條件，格式：table1.col1 = table2.col2
-    // 左邊欄位，允許 table.column 格式
+  // Parse JOIN conditions, format: table1.col1 = table2.col2
+  // Left column, allows table.column format
     Token left_table_token = consume_token();
     if (left_table_token.type != TokenType::Identifier) {
       throw std::runtime_error("Expected table name or column name in JOIN condition");
@@ -293,7 +289,7 @@ statement::StatementPtr Parser::parse_select() {
 
     expect_token(TokenType::Symbol, "=");
 
-    // 右邊欄位，允許 table.column 格式
+    // Right column, allows table.column format
     Token right_table_token = consume_token();
     if (right_table_token.type != TokenType::Identifier) {
       throw std::runtime_error("Expected table name or column name in JOIN condition");
@@ -308,7 +304,7 @@ statement::StatementPtr Parser::parse_select() {
       right_col += "." + col_name_token.text;
     }
 
-    // 讀取可選的 WHERE 條件
+    // Read the optional WHERE condition
     std::shared_ptr<statement::Condition> where_condition = nullptr;
     Token after_join = peek_token();
     if (after_join.type == TokenType::Identifier && 
@@ -317,12 +313,12 @@ statement::StatementPtr Parser::parse_select() {
       where_condition = parse_condition();
     }
 
-    // 回傳 SelectJoin 物件
+    // Return the SelectJoin object
     return std::make_unique<statement::SelectJoin>(
       table_name, table2_name, columns, left_col, right_col, where_condition, select_all);
   }
 
-  // 沒有 JOIN，解析可選的 WHERE
+  // No JOIN, resolve optional WHERE
   std::shared_ptr<statement::Condition> where_condition = nullptr;
   if (next.type == TokenType::Identifier && 
       (next.text == "WHERE" || next.text == "where")) {
@@ -335,7 +331,7 @@ statement::StatementPtr Parser::parse_select() {
 
 
 
-// 解析 UPDATE table_name SET col = val WHERE col = val
+// Parse UPDATE table_name SET col = val WHERE col = val
 statement::StatementPtr Parser::parse_update() {
   expect_token(TokenType::Identifier, "UPDATE");
 
@@ -372,7 +368,7 @@ statement::StatementPtr Parser::parse_update() {
   return std::make_unique<statement::Update>(table_name, set_col.text, set_val, where_condition);
 }
 
-// 解析 DELETE FROM table_name WHERE col = val
+// Parse DELETE FROM table_name WHERE col = val
 statement::StatementPtr Parser::parse_delete() {
   expect_token(TokenType::Identifier, "DELETE");
   expect_token(TokenType::Identifier, "FROM");
@@ -407,7 +403,7 @@ Token Parser::peek_token() {
   return tokenizer_.peek_token();
 }
 
-// parse OR 項目： left OR right OR ...
+// parse OR ： left OR right OR ...
 std::shared_ptr<statement::Condition> Parser::parse_logical_or() {
   auto left = parse_logical_and();
   while (true) {
@@ -425,7 +421,7 @@ std::shared_ptr<statement::Condition> Parser::parse_logical_or() {
   return left;
 }
 
-// parse AND 項目： left AND right AND ...
+// parse AND ： left AND right AND ...
 std::shared_ptr<statement::Condition> Parser::parse_logical_and() {
   auto left = parse_primary();
   while (true) {
@@ -443,7 +439,7 @@ std::shared_ptr<statement::Condition> Parser::parse_logical_and() {
   return left;
 }
 
-// parse_primary: 括號或比較條件
+// parse_primary: brackets or comparison conditions
 std::shared_ptr<statement::Condition> Parser::parse_primary() {
   Token token = peek_token();
 
@@ -457,7 +453,7 @@ std::shared_ptr<statement::Condition> Parser::parse_primary() {
   }
 }
 
-// parse_comparison: 比較條件 col op val
+// parse_comparison: comparison condition col op val
 std::shared_ptr<statement::Condition> Parser::parse_comparison() {
   Token col_token = consume_token();
   if (col_token.type != TokenType::Identifier) {
@@ -474,7 +470,7 @@ std::shared_ptr<statement::Condition> Parser::parse_comparison() {
   } else if (val_token.type == TokenType::StringLiteral) {
     value = val_token.text;
   } else if (val_token.type == TokenType::BooleanLiteral) {
-    // 假設你有 boolean literal 的 token type，並且 Value 能接受 bool
+   // Assuming you have a boolean literal token type, and Value can accept bool
     value = (val_token.text == "TRUE" || val_token.text == "true");
   } else {
     throw std::runtime_error("Expected number, string, or boolean literal but got token type: " + std::to_string(static_cast<int>(val_token.type)));
@@ -484,7 +480,7 @@ std::shared_ptr<statement::Condition> Parser::parse_comparison() {
 }
 
 
-// parse_compare_op: 取得比較運算子
+// parse_compare_op: Get the comparison operator
 statement::CompareOp Parser::parse_compare_op() {
   Token token = consume_token();
   if (token.type != TokenType::Symbol)
@@ -500,7 +496,7 @@ statement::CompareOp Parser::parse_compare_op() {
   throw std::runtime_error("Unknown comparison operator: " + token.text);
 }
 
-// parse_logical_op: 取得邏輯運算子 AND / OR
+// parse_logical_op: Get logical operator AND / OR
 statement::LogicalOp Parser::parse_logical_op() {
   Token token = consume_token();
   if (token.type != TokenType::Identifier)

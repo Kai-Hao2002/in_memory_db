@@ -17,16 +17,16 @@ public:
     virtual ~Statement() = default;
     virtual void execute(db::Database& db) = 0;
 
-    // 回傳語句名稱，例如 "CREATE TABLE"
+    // Returns the statement name, such as "CREATE TABLE"
     virtual std::string name() const = 0;
 
-    // 是否有結果資料 (通常只有 SELECT 有)
+    // Is there any result data (usually only SELECT)
     virtual bool has_results() const { return false; }
 
-    // SELECT 專用，取得欄位名稱
+    // SELECT only, get the column name
     virtual std::vector<std::string> get_columns() const { return {}; }
 
-    // SELECT 專用，取得結果資料
+    // SELECT only, get result data
     virtual const std::vector<std::vector<db::Value>>& get_results() const {
         static std::vector<std::vector<db::Value>> empty;
         return empty;

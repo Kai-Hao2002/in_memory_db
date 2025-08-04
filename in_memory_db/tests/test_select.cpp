@@ -14,7 +14,6 @@ using namespace statement;
 TEST_CASE("Basic SELECT with WHERE condition", "[select]") {
     Database db;
 
-    // 先建表並插入資料，這樣後面所有測試區塊都會用到
     db.create_table("users", {
         {"id", ColumnType::INT}, {"name", ColumnType::STRING}
     });

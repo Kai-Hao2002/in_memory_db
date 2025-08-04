@@ -37,7 +37,7 @@ void Select::execute(db::Database& db) {
         }
     } else {
         for (const auto& col_name : columns_) {
-            // 處理 table.column 語法：若有 "."，只取 "." 後的欄位名稱
+            // Process table.column syntax: if there is a ".", only take the column name after the "."
             std::string actual_col_name = col_name;
             size_t dot_pos = col_name.find('.');
             if (dot_pos != std::string::npos) {
@@ -48,7 +48,7 @@ void Select::execute(db::Database& db) {
             for (size_t i = 0; i < table.columns.size(); ++i) {
                 if (table.columns[i].name == actual_col_name) {
                     col_indexes.push_back(i);
-                    selected_col_names.push_back(col_name);  // 顯示仍用原始名稱
+                    selected_col_names.push_back(col_name);  // Display still uses the original name
                     found = true;
                     break;
                 }

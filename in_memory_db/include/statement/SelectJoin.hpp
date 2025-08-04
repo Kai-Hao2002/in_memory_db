@@ -38,8 +38,8 @@ private:
     std::string left_table_;
     std::string right_table_;
     std::vector<std::string> select_columns_;
-    std::string left_join_column_;   // 不帶 table 名稱，例如 "colA"
-    std::string right_join_column_;  // 不帶 table 名稱，例如 "colB"
+    std::string left_join_column_;   // Without table name, such as "colA"
+    std::string right_join_column_;  // Without table name, such as "colB"
     std::shared_ptr<Condition> where_;
 
     std::vector<std::vector<db::Value>> results_;

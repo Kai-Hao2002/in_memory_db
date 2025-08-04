@@ -33,7 +33,7 @@ Token Tokenizer::next_token() {
 
   char c = input_[pos_];
 
-  // ⭐ 雙字元運算子先判斷（像 !=、<=、>=）
+  // Double-word operators are checked first (like !=, <=, >=)
   if (pos_ + 1 < input_.size()) {
     std::string two_chars = input_.substr(pos_, 2);
     if (two_chars == "!=" || two_chars == "<=" || two_chars == ">=") {
@@ -42,16 +42,13 @@ Token Tokenizer::next_token() {
     }
   }
 
-  // ⭐ 單字符符號
+  // Single-character symbols
   if (c == ',' || c == '(' || c == ')' || c == '=' || c == '*' || c == '<' || c == '>' || c == '.' || c == ';') {
       ++pos_;
       return {TokenType::Symbol, std::string(1, c)};
   }
 
-
-
-
-  // 字串字面量，支援單引號與雙引號
+  // String literals, supporting single and double quotes
   if (c == '\'' || c == '"') {
       char quote = c;
       ++pos_;
@@ -62,32 +59,32 @@ Token Tokenizer::next_token() {
       if (pos_ == input_.size()) {
           throw std::runtime_error("Unterminated string literal");
       }
-      ++pos_; // 跳過結尾引號
+      ++pos_; // Skip the ending quote
       return {TokenType::StringLiteral, str};
   }
 
 
-  // 數值字面量（整數 or 浮點數）
+  // Numeric literal (integer or floating point number)
   if (std::isdigit(c)) {
       std::string num;
       bool has_dot = false;
       while (pos_ < input_.size() && (std::isdigit(input_[pos_]) || input_[pos_] == '.')) {
           if (input_[pos_] == '.') {
-              if (has_dot) break;  // 第二個點就停止，避免錯誤格式
+              if (has_dot) break;  // Stop at the second point to avoid incorrect format
               has_dot = true;
           }
           num += input_[pos_++];
       }
-      return {TokenType::Number, num};  // Parser 根據是否有 . 再做 float/double/int 判斷
+      return {TokenType::Number, num};  // Parser then makes float/double/int judgment based on whether there is a .
   }
 
 
-  // 識別字(關鍵字也是用這個標示)
+  // Identify the word (keywords are also marked with this)
   if (std::isalpha(c) || c == '_') {
     std::string id;
     while (pos_ < input_.size() &&
           (std::isalnum(input_[pos_]) || input_[pos_] == '_')) {
-      id += std::toupper(input_[pos_++]);  // 轉大寫方便後續判斷關鍵字
+      id += std::toupper(input_[pos_++]); // Convert to uppercase to facilitate subsequent keyword judgment
     }
 
     if (id == "TRUE" || id == "FALSE") {

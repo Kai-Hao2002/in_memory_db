@@ -9,12 +9,12 @@ namespace db {
 
 class Formatter {
 public:
-    // 輸出 ASCII 表格
+    // ASCII table
     static void print_ascii_table(const std::vector<std::string>& headers,
                                   const std::vector<std::vector<db::Value>>& rows,
                                   std::ostream& os = std::cout);
 
-    // 輸出 CSV 格式
+    // CSV format
     static void print_csv(const std::vector<std::string>& headers,
                           const std::vector<std::vector<db::Value>>& rows,
                           std::ostream& os = std::cout);

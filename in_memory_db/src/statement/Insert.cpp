@@ -10,7 +10,7 @@ Insert::Insert(std::string table_name,
                std::vector<std::unordered_map<std::string, db::Value>> rows)
     : table_name_(db::to_lower(std::move(table_name))) {
 
-    // 將欄位名稱一併轉為小寫
+    // Convert all column names to lowercase
     for (const auto& row : rows) {
         std::unordered_map<std::string, db::Value> lowered_row;
         for (const auto& [key, val] : row) {

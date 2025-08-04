@@ -26,7 +26,7 @@ void Table::insert(const std::unordered_map<std::string, Value>& data) {
             }
             row.values.push_back(it->second);
         } else {
-            // 根據欄位型別推定預設值
+            // Infer the default value based on the field type
             switch (col.type) {
                 case ColumnType::INT:
                     row.values.push_back(Value(0));
@@ -60,7 +60,7 @@ void Table::delete_all() {
 
 void Table::delete_where(std::shared_ptr<statement::Condition> where_condition) {
     if (!where_condition) {
-        // 沒有條件就刪除全部
+        // Delete all if no conditions are met
         rows.clear();
         return;
     }
@@ -73,7 +73,7 @@ void Table::delete_where(std::shared_ptr<statement::Condition> where_condition) 
 
 void Table::update_where(std::shared_ptr<statement::Condition> where_condition,
                         const std::string& set_column, const Value& set_value) {
-    // 找 set_column 的 index
+    // Find the index of set_column
     size_t set_idx = columns.size();
     std::string set_col_lower = db::to_lower(set_column);
     for (size_t i = 0; i < columns.size(); ++i) {
@@ -87,7 +87,7 @@ void Table::update_where(std::shared_ptr<statement::Condition> where_condition,
     }
 
 
-    // 如果沒有條件，全部更新
+    // If there is no condition, update all
     if (!where_condition) {
         for (auto& row : rows) {
             row.values[set_idx] = set_value;
@@ -95,7 +95,7 @@ void Table::update_where(std::shared_ptr<statement::Condition> where_condition,
         return;
     }
 
-    // 根據條件判斷更新
+    // Update based on the conditions
     for (auto& row : rows) {
         if (where_condition->evaluate(row, columns)) {
             row.values[set_idx] = set_value;

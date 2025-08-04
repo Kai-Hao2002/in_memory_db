@@ -12,7 +12,6 @@ using namespace db;
 using namespace statement;
 
 TEST_CASE("Database persistence: save and load", "[persistence]") {
-    // 原始資料庫建立與資料插入
     Database db;
     db.create_table("students", {
         {"id", ColumnType::INT}, {"name", ColumnType::STRING}
@@ -31,15 +30,12 @@ TEST_CASE("Database persistence: save and load", "[persistence]") {
     REQUIRE(insert2 != nullptr);
     insert2->execute(db);
 
-    // 儲存至檔案
     std::string filename = "test_db_backup.txt";
     db.save_to_file(filename);
 
-    // 建立新資料庫並載入
     Database db2;
     db2.load_from_file(filename);
 
-    // 驗證資料存在
     REQUIRE(db2.has_table("students"));
 
     const Table& tbl = db2.get_table("students");
@@ -52,6 +48,5 @@ TEST_CASE("Database persistence: save and load", "[persistence]") {
     REQUIRE(std::get<int>(rows[1].values[0]) == 2);
     REQUIRE(std::get<std::string>(rows[1].values[1]) == "Bob");
 
-    // 刪除測試檔案
     std::remove(filename.c_str());
 }

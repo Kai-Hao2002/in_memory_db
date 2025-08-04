@@ -9,7 +9,7 @@ namespace statement {
 
 class Delete : public Statement {
 public:
-    // 將條件改為 shared_ptr<Condition>，nullptr 表示無條件
+    // Change the condition to shared_ptr<Condition>, nullptr means no condition
     Delete(std::string table_name, std::shared_ptr<Condition> where_condition = nullptr);
     void execute(db::Database& db) override;
 

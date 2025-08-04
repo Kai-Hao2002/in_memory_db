@@ -48,7 +48,7 @@ void CLIInterface::run() {
         std::string lowered = to_lower(trimmed);
 
         if (!trimmed.empty() && trimmed.back() == ';') {
-            trimmed.pop_back();  // 移除 ;
+            trimmed.pop_back();  // remove ;
         }
 
         if (lowered == "exit") break;

@@ -16,7 +16,7 @@ CompareCondition::CompareCondition(std::string column,
       op(op),
       value(std::move(value)) {}
       
-// 輔助函式：根據欄位名稱找到索引
+// Helper function: find the index based on the field name
 int find_column_index(const std::vector<Column>& columns, const std::string& column_name) {
     for (size_t i = 0; i < columns.size(); ++i) {
         if (columns[i].name == column_name) {
@@ -26,30 +26,47 @@ int find_column_index(const std::vector<Column>& columns, const std::string& col
     throw std::runtime_error("Column not found: " + column_name);
 }
 
-// 輔助函式：比較 lhs 和 rhs 是否符合 op 條件
-bool compare_values(const Value& lhs, const CompareOp op, const Value& rhs) {
-    if (lhs.index() != rhs.index()) {
-        throw std::runtime_error("Type mismatch in comparison");
-    }
+// Helper function: compare lhs and rhs to see if they match op
+bool compare_values(const Value& lhs, CompareOp op, const Value& rhs) {
+    return std::visit([&](auto&& lval) -> bool {
+        return std::visit([&](auto&& rval) -> bool {
+            using L = std::decay_t<decltype(lval)>;
+            using R = std::decay_t<decltype(rval)>;
 
-    return std::visit([&](const auto& lval) -> bool {
-        const auto& rval = std::get<std::decay_t<decltype(lval)>>(rhs);
-        switch (op) {
-            case CompareOp::EQ:  return lval == rval;
-            case CompareOp::NEQ: return lval != rval;
-            case CompareOp::LT:  return lval <  rval;
-            case CompareOp::LTE: return lval <= rval;
-            case CompareOp::GT:  return lval >  rval;
-            case CompareOp::GTE: return lval >= rval;
-        }
-        return false; // Should never reach here
+            if constexpr (std::is_arithmetic_v<L> && std::is_arithmetic_v<R>) {
+                double lv = static_cast<double>(lval);
+                double rv = static_cast<double>(rval);
+                switch (op) {
+                    case CompareOp::EQ:  return lv == rv;
+                    case CompareOp::NEQ: return lv != rv;
+                    case CompareOp::LT:  return lv <  rv;
+                    case CompareOp::LTE: return lv <= rv;
+                    case CompareOp::GT:  return lv >  rv;
+                    case CompareOp::GTE: return lv >= rv;
+                }
+            }
+
+            if constexpr (std::is_same_v<L, std::string> && std::is_same_v<R, std::string>) {
+                switch (op) {
+                    case CompareOp::EQ:  return lval == rval;
+                    case CompareOp::NEQ: return lval != rval;
+                    case CompareOp::LT:  return lval <  rval;
+                    case CompareOp::LTE: return lval <= rval;
+                    case CompareOp::GT:  return lval >  rval;
+                    case CompareOp::GTE: return lval >= rval;
+                }
+            }
+
+            throw db::DBException("Unsupported comparison between types");
+        }, rhs);
     }, lhs);
 }
 
-// CompareCondition 的 evaluate 實作
+
+// CompareCondition evaluate implementation
 bool CompareCondition::evaluate(const Row& row,
                                 const std::vector<Column>& columns) const {
-    // —— 优化列索引查找 —— 
+    //——Optimize column index lookup——
     int idx = -1;
     for (int i = 0; i < (int)columns.size(); ++i) {
         if (columns[i].name == column) {
@@ -62,11 +79,11 @@ bool CompareCondition::evaluate(const Row& row,
 
     const Value& cell = row.values.at(idx);
 
-    // —— 类型一致性检查 —— 
+    //——Type consistency check——
     if (cell.index() != value.index())
         throw db::DBException("Type mismatch in comparison for column: " + column);
 
-    // —— 用 std::visit 处理所有类型 & 运算符 —— 
+    // -- handle all types with std::visit & operator --
     bool result = false;
     std::visit([&](auto const& lval) {
         using T = std::decay_t<decltype(lval)>;
@@ -85,7 +102,7 @@ bool CompareCondition::evaluate(const Row& row,
 }
 
 
-// LogicalCondition 的 evaluate 實作
+// LogicalCondition's evaluate implementation
 bool LogicalCondition::evaluate(const Row& row, const std::vector<Column>& columns) const {
     bool left_result = left->evaluate(row, columns);
     bool right_result = right->evaluate(row, columns);
@@ -93,10 +110,10 @@ bool LogicalCondition::evaluate(const Row& row, const std::vector<Column>& colum
         case LogicalOp::AND: return left_result && right_result;
         case LogicalOp::OR:  return left_result || right_result;
     }
-    return false; // 不可能到這邊
+    return false; 
 }
 
-// ParenCondition 的 evaluate 實作
+//ParenCondition's evaluate implementation
 bool ParenCondition::evaluate(const Row& row, const std::vector<Column>& columns) const {
     return inner->evaluate(row, columns);
 }

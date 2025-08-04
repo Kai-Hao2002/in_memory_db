@@ -24,7 +24,7 @@ public:
 
     bool has_results() const override { return true; }
 
-    // ✅ 回傳經由解析的欄位名稱，而非原始輸入的 columns_
+    // Return the parsed column names instead of the original input columns_
     std::vector<std::string> get_columns() const override { return output_column_names_; }
 
     const std::vector<std::vector<db::Value>>& get_results() const override { return results_; }
@@ -37,12 +37,12 @@ public:
 
 private:
     std::string table_name_;
-    std::vector<std::string> columns_;  // 原始輸入（可能為 "*"）
+    std::vector<std::string> columns_; // Original input (maybe "*")
     std::shared_ptr<Condition> where_;
     bool select_all_ = false;
 
-    std::vector<std::vector<db::Value>> results_;             // 資料列
-    std::vector<std::string> output_column_names_;            // 解析後的欄位名稱（即將顯示的欄位名）
+    std::vector<std::vector<db::Value>> results_;             //Data column
+    std::vector<std::string> output_column_names_;            // The parsed column name (the column name to be displayed)
 };
 
 

@@ -31,7 +31,7 @@ private:
     std::string sql_input;
     std::string result_output;
 
-    // GUI 元件
+    // GUI component
     sf::Font font;
     sf::Text text;
     sf::Text inputText;
@@ -53,7 +53,7 @@ private:
     sf::RectangleShape loadButton;
     sf::Text loadButtonText;
 
-    std::string filename = "db.txt";  // 預設檔案名
+    std::string filename = "db.txt";  // default filename
 
     sf::RectangleShape selectButton, insertButton, deleteButton, updateButton, createButton, joinButton;
     sf::Text selectButtonText, insertButtonText, deleteButtonText, updateButtonText, createButtonText, joinButtonText;
@@ -64,14 +64,14 @@ private:
     std::string currentInput;
     bool isInputActive = false;
 
-    void handle_input(const sf::Event& event); // 改為帶 event 的版本
+    void handle_input(const sf::Event& event); 
     void execute_sql(const std::string& sql);
     void draw();
 
     //游標
-    std::size_t cursorPosition = 0;      // 游標位置
-    sf::RectangleShape cursor;           // 游標圖形
-    sf::Clock cursorTimer;               // 控制閃爍
+    std::size_t cursorPosition = 0;      // Cursor position
+    sf::RectangleShape cursor;           // Cursor graph
+    sf::Clock cursorTimer;               // Controlling Flashing
     bool showCursor = true;
 
 

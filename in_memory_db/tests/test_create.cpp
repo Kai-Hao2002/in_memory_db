@@ -9,7 +9,7 @@
 
 using namespace db;
 using namespace statement;
-using namespace std::string_literals;  // 為了 "..."s 字面值
+using namespace std::string_literals;  
 
 TEST_CASE("CREATE TABLE statement creates a new table", "[create]") {
     Database db;

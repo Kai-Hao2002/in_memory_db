@@ -1,5 +1,4 @@
 // tests/test_delete.cpp
-// tests/test_delete.cpp
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch_all.hpp>
 
@@ -26,8 +25,8 @@ TEST_CASE("DELETE removes matching rows", "[delete]") {
 
     delete_stmt->execute(db);
 
-    const auto& table = db.get_table("users");  // 傳回的是 Table&
-    const auto& rows = table.get_rows();        // 用 . 而不是 ->
+    const auto& table = db.get_table("users");  
+    const auto& rows = table.get_rows();        
     REQUIRE(rows.size() == 1);
     
     const auto& remaining_row = rows[0].values;

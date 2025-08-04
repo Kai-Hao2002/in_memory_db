@@ -56,7 +56,7 @@ void Database::insert(const std::string& table_name, const std::unordered_map<st
     }
     Table& table = get_table(lower_name);
 
-    // 把 key 都轉成小寫再呼叫 Table::insert
+    // Convert all keys to lowercase before calling Table::insert
     std::unordered_map<std::string, Value> lower_data;
     for (const auto& [k, v] : data) {
         lower_data.emplace(db::to_lower(k), v);
@@ -70,7 +70,7 @@ std::vector<Row> Database::execute(const std::string& sql) {
     Parser parser(sql);
     auto stmt = parser.parse();  // statement::StatementPtr
 
-    stmt->execute(*this);  // 多型調用 execute()
+    stmt->execute(*this);  // Polymorphic call execute()
 
     std::vector<Row> result_rows;
 
@@ -92,14 +92,14 @@ void Database::save_to_file(const std::string& filename) const {
     for (const auto& [name, table] : tables) {
         ofs << "TABLE " << name << "\n";
 
-        // 儲存欄位資訊，改用 switch 列出所有型態
+        // Store field information and use switch to list all types
         for (const auto& col : table.columns) {
             ofs << col.name << " ";
             switch (col.type) {
                 case ColumnType::INT: ofs << "INT"; break;
                 case ColumnType::STRING: ofs << "STRING"; break;
                 case ColumnType::FLOAT: ofs << "FLOAT"; break;
-                case ColumnType::DOUBLE: ofs << "DOUBLE"; break;  // ✅ 加這一行
+                case ColumnType::DOUBLE: ofs << "DOUBLE"; break;  
                 case ColumnType::BOOL: ofs << "BOOL"; break;
                 case ColumnType::DATE: ofs << "DATE"; break;
                 default: throw std::runtime_error("Unknown column type");
@@ -119,7 +119,7 @@ void Database::save_to_file(const std::string& filename) const {
                 } else if (std::holds_alternative<float>(val)) {
                     ofs << std::get<float>(val);
                 } else if (std::holds_alternative<double>(val)) {
-                    ofs << std::get<double>(val);  // ✅ 補上這一段
+                    ofs << std::get<double>(val); 
                 } else if (std::holds_alternative<bool>(val)) {
                     ofs << (std::get<bool>(val) ? "TRUE" : "FALSE");
                 } else {
@@ -230,7 +230,7 @@ void Database::load_from_file(const std::string& filename) {
                             if (!(row_iss >> std::quoted(val))) {
                                 throw std::runtime_error("Invalid DATE value for column " + col.name);
                             }
-                            row_data[col.name] = val;  // 用 string 表示日期
+                            row_data[col.name] = val;  // Representing a date as a string
                             break;
                         }
                         default:
@@ -243,7 +243,5 @@ void Database::load_from_file(const std::string& filename) {
         }
     }
 }
-
-
 
 } // namespace db

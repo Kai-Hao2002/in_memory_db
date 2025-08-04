@@ -5,10 +5,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# 指定 include 目錄
+# Specify include directory
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
-# 加入子目錄
+# Add subdirectories
 add_subdirectory(in_memory_db)
 enable_testing()
 

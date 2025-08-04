@@ -19,10 +19,10 @@ void Delete::execute(db::Database& db) {
     db::Table& table = db.get_table(table_name_);
 
     if (!where_condition_) {
-        // 無條件，刪除所有
+        // Unconditional, delete all
         table.delete_all();
     } else {
-        // 有條件，刪除符合條件的列
+        // If there are conditions, delete the columns that meet the conditions
         auto& rows = table.get_rows();
         rows.erase(
             std::remove_if(rows.begin(), rows.end(),

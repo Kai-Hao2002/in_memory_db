@@ -7,7 +7,7 @@ namespace db {
 void Formatter::print_ascii_table(const std::vector<std::string>& headers,
                                  const std::vector<std::vector<db::Value>>& rows,
                                  std::ostream& os) {
-    // 計算每欄最大寬度
+    // Calculate the maximum width of each column
     std::vector<size_t> col_widths(headers.size(), 0);
     for (size_t i = 0; i < headers.size(); ++i) {
         col_widths[i] = headers[i].size();
@@ -74,7 +74,7 @@ void Formatter::print_csv(const std::vector<std::string>& headers,
             if (i > 0) os << ",";
             std::ostringstream oss;
             oss << row[i];
-            // 可加引號，視需求加強處理
+            // Quotes can be added to enhance processing as needed
             os << "\"" << oss.str() << "\"";
         }
         os << "\n";
