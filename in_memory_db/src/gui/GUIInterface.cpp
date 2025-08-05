@@ -110,12 +110,12 @@ GUIInterface::GUIInterface()
     // SELECT button
     selectButton.setSize({100, 30});
     selectButton.setFillColor(sf::Color(200, 200, 200));
-    selectButton.setPosition(margin + 0 * 110, buttonY2);
+    selectButton.setPosition(margin + 3 * 110, buttonY2);
     selectButtonText.setFont(font);
     selectButtonText.setString("SELECT");
     selectButtonText.setCharacterSize(14);
     selectButtonText.setFillColor(sf::Color::Black);
-    selectButtonText.setPosition(margin + 0 * 110 + 10, buttonY2 + 5);
+    selectButtonText.setPosition(margin + 3 * 110 + 10, buttonY2 + 5);
 
     // INSERT button
     insertButton.setSize({100, 30});
@@ -130,32 +130,32 @@ GUIInterface::GUIInterface()
     // DELETE button
     deleteButton.setSize({100, 30});
     deleteButton.setFillColor(sf::Color(200, 200, 200));
-    deleteButton.setPosition(margin + 2 * 110, buttonY2);
+    deleteButton.setPosition(margin + 4 * 110, buttonY2);
     deleteButtonText.setFont(font);
     deleteButtonText.setString("DELETE");
     deleteButtonText.setCharacterSize(14);
     deleteButtonText.setFillColor(sf::Color::Black);
-    deleteButtonText.setPosition(margin + 2 * 110 + 10, buttonY2 + 5);
+    deleteButtonText.setPosition(margin + 4 * 110 + 10, buttonY2 + 5);
 
     // UPDATE button
     updateButton.setSize({100, 30});
     updateButton.setFillColor(sf::Color(200, 200, 200));
-    updateButton.setPosition(margin + 3 * 110, buttonY2);
+    updateButton.setPosition(margin + 2 * 110, buttonY2);
     updateButtonText.setFont(font);
     updateButtonText.setString("UPDATE");
     updateButtonText.setCharacterSize(14);
     updateButtonText.setFillColor(sf::Color::Black);
-    updateButtonText.setPosition(margin + 3 * 110 + 10, buttonY2 + 5);
+    updateButtonText.setPosition(margin + 2 * 110 + 10, buttonY2 + 5);
 
     // CREATE button
     createButton.setSize({100, 30});
     createButton.setFillColor(sf::Color(200, 200, 200));
-    createButton.setPosition(margin + 4 * 110, buttonY2);
+    createButton.setPosition(margin + 0 * 110, buttonY2);
     createButtonText.setFont(font);
     createButtonText.setString("CREATE");
     createButtonText.setCharacterSize(14);
     createButtonText.setFillColor(sf::Color::Black);
-    createButtonText.setPosition(margin + 4 * 110 + 10, buttonY2 + 5);
+    createButtonText.setPosition(margin + 0 * 110 + 10, buttonY2 + 5);
 
     // JOIN button
     joinButton.setSize({100, 30});
@@ -298,42 +298,48 @@ void GUIInterface::handle_input(const sf::Event& event) {
             isInputActive = false;
             showCursor = false;
         } else if (selectButton.getGlobalBounds().contains(mousePos)) {
-            currentInput = "SELECT * FROM table_name WHERE condition;";
+            // currentInput = "SELECT * FROM table_name WHERE condition;";
+            currentInput = "SELECT * FROM students WHERE name='Charlie';";
             cursorPosition = currentInput.size();
             inputText.setString(currentInput);
             isInputActive = true;
             showCursor = true;
             cursorTimer.restart();
         } else if (insertButton.getGlobalBounds().contains(mousePos)) {
-            currentInput = "INSERT INTO table_name (column1, column2) VALUES (value1, value2);";
+            //currentInput = "INSERT INTO table_name (column1, column2) VALUES (value1, value2);";
+            currentInput = "INSERT INTO students (id, name) VALUES (1, 'Bob');";
             cursorPosition = currentInput.size();
             inputText.setString(currentInput);
             isInputActive = true;
             showCursor = true;
             cursorTimer.restart();
         } else if (deleteButton.getGlobalBounds().contains(mousePos)) {
-            currentInput = "DELETE FROM table_name WHERE condition;";
+            //currentInput = "DELETE FROM table_name WHERE condition;";
+            currentInput = "DELETE FROM students WHERE id=1;";
             cursorPosition = currentInput.size();
             inputText.setString(currentInput);
             isInputActive = true;
             showCursor = true;
             cursorTimer.restart();
         } else if (updateButton.getGlobalBounds().contains(mousePos)) {
-            currentInput = "UPDATE table_name SET column1 = value1 WHERE condition;";
+            //currentInput = "UPDATE table_name SET column1 = value1 WHERE condition;";
+            currentInput = "UPDATE students SET name='Charlie' WHERE id=1;";
             cursorPosition = currentInput.size();
             inputText.setString(currentInput);
             isInputActive = true;
             showCursor = true;
             cursorTimer.restart();
         } else if (createButton.getGlobalBounds().contains(mousePos)) {
-            currentInput = "CREATE TABLE table_name (column1 TYPE, column2 TYPE);";
+            //currentInput = "CREATE TABLE table_name (column1 TYPE, column2 TYPE);";
+            currentInput = "CREATE TABLE students (id INT, name STRING);";
             cursorPosition = currentInput.size();
             inputText.setString(currentInput);
             isInputActive = true;
             showCursor = true;
             cursorTimer.restart();
         } else if (joinButton.getGlobalBounds().contains(mousePos)) {
-            currentInput = "SELECT t1.col1, t2.col2 FROM table1 t1 INNER JOIN table2 t2 ON t1.col = t2.col;";
+            //currentInput = "SELECT t1.col1, t2.col2 FROM table1 t1 INNER JOIN table2 t2 ON t1.col = t2.col;";
+            currentInput = "SELECT students.name, scores.score FROM students INNER JOIN scores ON students.id = scores.s_id;";
             cursorPosition = currentInput.size();
             inputText.setString(currentInput);
             isInputActive = true;
@@ -433,20 +439,21 @@ void GUIInterface::draw() {
     window.draw(loadButtonText);
 
     // Second row Template SQL buttons
-    window.draw(selectButton);
-    window.draw(selectButtonText);
+    window.draw(createButton);
+    window.draw(createButtonText);   
 
     window.draw(insertButton);
     window.draw(insertButtonText);
 
-    window.draw(deleteButton);
-    window.draw(deleteButtonText);
-
     window.draw(updateButton);
     window.draw(updateButtonText);
 
-    window.draw(createButton);
-    window.draw(createButtonText);
+    window.draw(selectButton);
+    window.draw(selectButtonText);
+
+
+    window.draw(deleteButton);
+    window.draw(deleteButtonText);
 
     window.draw(joinButton);
     window.draw(joinButtonText);

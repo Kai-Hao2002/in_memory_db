@@ -14,14 +14,6 @@ public:
     void run();
 
 private:
-    const std::unordered_map<std::string, std::string> sqlTemplates = {
-        {"SELECT", "SELECT * FROM table_name WHERE condition;"},
-        {"INSERT", "INSERT INTO table_name (column1, column2) VALUES (value1, value2);"},
-        {"DELETE", "DELETE FROM table_name WHERE condition;"},
-        {"UPDATE", "UPDATE table_name SET column1 = value1 WHERE condition;"},
-        {"CREATE", "CREATE TABLE table_name (column1 TYPE, column2 TYPE);"},
-        {"JOIN",   "SELECT t1.col1, t2.col2 FROM table1 t1 INNER JOIN table2 t2 ON t1.col = t2.col;"}
-    };
 
     std::string trim(const std::string& s);
     sf::RenderWindow window;
