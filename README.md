@@ -54,7 +54,8 @@ brew link sfml@2
 
 ```bash
 git https://github.com/Kai-Hao2002/in_memory_db.git
-mkdir build && cd build
+mkdir build 
+cd build
 cmake ..
 ninja
 #or
