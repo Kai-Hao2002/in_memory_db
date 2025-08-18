@@ -29,37 +29,52 @@ int find_column_index(const std::vector<Column>& columns, const std::string& col
 // Helper function: compare lhs and rhs to see if they match op
 bool compare_values(const Value& lhs, CompareOp op, const Value& rhs) {
     return std::visit([&](auto&& lval) -> bool {
-        return std::visit([&](auto&& rval) -> bool {
-            using L = std::decay_t<decltype(lval)>;
-            using R = std::decay_t<decltype(rval)>;
+        using T = std::decay_t<decltype(lval)>;
 
-            if constexpr (std::is_arithmetic_v<L> && std::is_arithmetic_v<R>) {
-                double lv = static_cast<double>(lval);
-                double rv = static_cast<double>(rval);
-                switch (op) {
-                    case CompareOp::EQ:  return lv == rv;
-                    case CompareOp::NEQ: return lv != rv;
-                    case CompareOp::LT:  return lv <  rv;
-                    case CompareOp::LTE: return lv <= rv;
-                    case CompareOp::GT:  return lv >  rv;
-                    case CompareOp::GTE: return lv >= rv;
+        if constexpr (std::is_same_v<T, int> || std::is_same_v<T, float> || std::is_same_v<T, double>) {
+            double lv = static_cast<double>(lval);
+            double rv = std::visit([](auto&& rval) -> double {
+                using U = std::decay_t<decltype(rval)>;
+                if constexpr (std::is_same_v<U, int> || std::is_same_v<U, float> || std::is_same_v<U, double>) {
+                    return static_cast<double>(rval);
+                } else if constexpr (std::is_same_v<U, std::string>) {
+                    return std::stod(rval); 
+                } else {
+                    throw std::runtime_error("Unsupported type in numeric comparison");
                 }
-            }
+            }, rhs);
 
-            if constexpr (std::is_same_v<L, std::string> && std::is_same_v<R, std::string>) {
-                switch (op) {
-                    case CompareOp::EQ:  return lval == rval;
-                    case CompareOp::NEQ: return lval != rval;
-                    case CompareOp::LT:  return lval <  rval;
-                    case CompareOp::LTE: return lval <= rval;
-                    case CompareOp::GT:  return lval >  rval;
-                    case CompareOp::GTE: return lval >= rval;
-                }
+            switch (op) {
+                case CompareOp::EQ: return lv == rv;
+                case CompareOp::NEQ: return lv != rv;
+                case CompareOp::LT: return lv < rv;
+                case CompareOp::LTE: return lv <= rv;
+                case CompareOp::GT: return lv > rv;
+                case CompareOp::GTE: return lv >= rv;
             }
-
-            throw db::DBException("Unsupported comparison between types");
-        }, rhs);
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            // 字串比對
+            const std::string& lv = lval;
+            const std::string& rv = std::get<std::string>(rhs);
+            switch (op) {
+                case CompareOp::EQ: return lv == rv;
+                case CompareOp::NEQ: return lv != rv;
+                case CompareOp::LT: return lv < rv;
+                case CompareOp::LTE: return lv <= rv;
+                case CompareOp::GT: return lv > rv;
+                case CompareOp::GTE: return lv >= rv;
+            }
+        } else if constexpr (std::is_same_v<T, bool>) {
+            bool rv = std::get<bool>(rhs);
+            switch (op) {
+                case CompareOp::EQ: return lval == rv;
+                case CompareOp::NEQ: return lval != rv;
+                default: throw std::runtime_error("Invalid operator for bool");
+            }
+        }
+        throw std::runtime_error("Unsupported type in comparison");
     }, lhs);
+
 }
 
 

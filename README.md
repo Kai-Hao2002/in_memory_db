@@ -47,16 +47,22 @@ in_memory_db/
 - Catch2 (unit tests)
 - SFML MSYS2
 - pacman -S mingw-w64-ucrt-x86_64-sfml
+- MacOS: 
+brew uninstall sfml
+brew install sfml@2
+brew link sfml@2
 
 ```bash
-git clone https://github.com/your_username/in_memory_db.git
+git https://github.com/Kai-Hao2002/in_memory_db.git
 mkdir build && cd build
 cmake ..
 ninja
+#or
+make 
 
 #Test case 
 ctest --verbose
 
 #main.cpp
-in_memory_db/in_memory_db.exe
+in_memory_db/in_memory_db
 

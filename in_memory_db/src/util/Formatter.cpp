@@ -1,6 +1,8 @@
 //src/util/Formatter.cpp
 #include "util/Formatter.hpp"
 #include <iomanip>
+#include <sstream>
+
 
 namespace db {
 
