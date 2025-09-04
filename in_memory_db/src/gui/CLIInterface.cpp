@@ -27,7 +27,6 @@ std::string CLIInterface::trim(const std::string& str) {
 
 
 void CLIInterface::run() {
-    db::Database database;
     bool output_csv = false;
     std::cout << "==== Welcome to the In-Memory DB (CLI UI) ====\n"
           << "Enter SQL statements or use shortcuts:\n"
@@ -65,7 +64,7 @@ void CLIInterface::run() {
         if (lowered.rfind("save to ", 0) == 0) {
             std::string filename = trimmed.substr(8);
             try {
-                database.save_to_file(trim(filename));
+                database_.save_to_file(trim(filename));
                 std::cout << "Database saved to '" << filename << "' successfully.\n";
             } catch (const std::exception& e) {
                 std::cerr << "Failed to save: " << e.what() << "\n";
@@ -75,7 +74,7 @@ void CLIInterface::run() {
         if (lowered.rfind("load from ", 0) == 0) {
             std::string filename = trimmed.substr(10);
             try {
-                database.load_from_file(trim(filename));
+                database_.load_from_file(trim(filename));
                 std::cout << "Database loaded from '" << filename << "' successfully.\n";
             } catch (const std::exception& e) {
                 std::cerr << "Failed to load: " << e.what() << "\n";

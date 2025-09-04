@@ -466,7 +466,11 @@ std::shared_ptr<statement::Condition> Parser::parse_comparison() {
   Token val_token = consume_token();
   db::Value value;
   if (val_token.type == TokenType::Number) {
-    value = std::stoi(val_token.text);
+    if (val_token.text.find('.') != std::string::npos) {
+      value = std::stod(val_token.text); // double
+    } else {
+      value = std::stoi(val_token.text); // int
+    }
   } else if (val_token.type == TokenType::StringLiteral) {
     value = val_token.text;
   } else if (val_token.type == TokenType::BooleanLiteral) {
